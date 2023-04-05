@@ -17,5 +17,7 @@ def text_to_json(file_path):
     # Return the JSON object
     return json_data
 
-block_population = read_file_int('blocks_population.txt')
-problem_config = text_to_json('problem_config.txt')
+def read_files():
+    blocks_population = read_file_int('blocks_population.txt')
+    problem_config = text_to_json('problem_config.txt')    
+    return blocks_population, problem_config
