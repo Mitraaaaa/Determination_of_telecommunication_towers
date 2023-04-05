@@ -17,9 +17,10 @@ def calculate_coordinates(location):
     y = location % 20
     return [x,y]
 
-
-def check_density_of_blocks():
+def find_next_number():
     pass
+
+
 
 def manhattan_distance(point1, point2):
     # Calculate the absolute difference between the x-coordinates and y-coordinates
