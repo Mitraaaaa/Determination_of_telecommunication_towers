@@ -17,6 +17,28 @@ def divide_grid(N , dp_squares : list):
             regions.append(region)
     return regions
 
+def check_density_of_blocks(region: list, population_size: list):
+    density = 0
+    for i in region:
+        density += population_size[i]
+    return density
+
+def set_tower_locations(size_of_towers, population_size):
+    region_list = divide_grid(size_of_towers+1)
+    density_list = []
+    for i in region_list:
+        density_list.append(check_density_of_blocks(i,population_size))
+
+    probs = list()
+    index = 1
+    values = list()
+    for i in density_list:
+        probs.append(i/sum(density_list))
+        values.append(index)
+        index += 1
+    
+    regions_tower = np.random.choice(values,size=size_of_towers,p = probs)
+    print(regions_tower)
 
 def find_closest_square():
     dp_closest_squares = numpy.zeros(401)
@@ -36,7 +58,4 @@ dp_squares = find_closest_square()
 
 l = divide_grid(80, dp_squares)
 
-print(len(l))
-for each in l:
-    print(each)
-    print("================================")
+set_tower_locations()
