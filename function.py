@@ -1,6 +1,7 @@
 import numpy as np
 from math import exp,floor
 import math
+import openfile
 
 def conv(x_alley:list, y_d:list)->float:
     alley_loc = np.array([x_alley])
@@ -84,5 +85,47 @@ def estimate_max_bound_for_eachTower(tower_id :int, assign_blocks :dict, each_to
     max_bound_towerId = ((3* each_tower_population[tower_id])//conv(calculate_coordinates(Farthest_neighbour), calculate_coordinates(tower_id)))
     return max_bound_towerId
 
-def calculate_satisfaction():
-    pass
+def calculate_satisfaction(assign_dict: list, each_tower_population: list):
+    # inputs
+        # 1- assign_dict -> see what blocks are assigned to what tower
+        # 2- each_tower_population -> needed for the calculation of the bound of each block
+    # requirements
+        # 1- number of towers + their bound -> calculate cost of towers
+        # 2- population of each block and the tower assigned to that block -> calculate score of each block
+    
+    blocks_population, problem_config = openfile.read_files()
+
+    # getting costs and scores from config-file
+    cost_to_build_tower = problem_config['tower_construction_cost']
+    cost_to_increase_bandwidth = problem_config['tower_maintanance_cost']
+    user_satisfaction_levels = problem_config['user_satisfaction_levels']
+    user_satisfaction_scores = problem_config['user_satisfaction_scores']
+
+    total_increasd_bound = 0
+    total_score = 0
+
+    for i in len(assign_dict):
+        # get boundwidth of tower
+        bound_of_tower = estimate_max_bound_for_eachTower(i)
+        # add cost for increased bound
+        total_increasd_bound += bound_of_tower * cost_to_increase_bandwidth
+        # calculate score for each block assigned to tower[i]
+        for block in assign_dict[i]:
+            # getting the population of the block
+            block_population = blocks_population[block]
+            # need to specify boundwidth for each block
+            block_bound = (block_population / each_tower_population[i]) * bound_of_tower
+            # getting each user
+            bound_of_each_user_in_block = block_bound / block_population
+            # calculate the score
+            score = 0
+            for j in len(user_satisfaction_levels):
+                if bound_of_each_user_in_block >= user_satisfaction_levels[j]:
+                    score = user_satisfaction_scores[j]
+                    break
+            # update total_score
+            total_score += (score * block_population)
+    # calculate the cost of building towers + their increased bandwidth
+    total_cost_of_towers = total_increasd_bound + (len(assign_dict) * cost_to_build_tower)
+            
+    return -abs(total_cost_of_towers) + total_score
