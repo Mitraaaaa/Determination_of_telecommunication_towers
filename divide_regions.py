@@ -1,11 +1,14 @@
 import math
 import numpy
+import openfile
+import random
+
 def divide_grid(N , dp_squares : list):
     # N is the number of regions U want to split your area, * it's not the lines of division
     N = math.sqrt(dp_squares[N])
-    print(N)
+    #print(N)
     region_size = math.ceil(20/N)
-    print(region_size)
+    #print(region_size)
     regions = []
     for i in range(0, 20, region_size):
         for j in range(0, 20, region_size):
@@ -20,11 +23,13 @@ def divide_grid(N , dp_squares : list):
 def check_density_of_blocks(region: list, population_size: list):
     density = 0
     for i in region:
-        density += population_size[i]
+        temp = i[0]*20 + i[1]
+        density += population_size[temp]
     return density
 
 def set_tower_locations(size_of_towers, population_size):
-    region_list = divide_grid(size_of_towers+1)
+    dp_squares = find_closest_square()
+    region_list = divide_grid(size_of_towers+1, dp_squares)
     density_list = []
     for i in region_list:
         density_list.append(check_density_of_blocks(i,population_size))
@@ -37,8 +42,16 @@ def set_tower_locations(size_of_towers, population_size):
         values.append(index)
         index += 1
     
-    regions_tower = np.random.choice(values,size=size_of_towers,p = probs)
-    print(regions_tower)
+    regions_tower = numpy.random.choice(values,size=size_of_towers,p = probs)
+    final_list = []
+    
+    for x in regions_tower:
+        block_list = region_list[x - 1]
+        t = random.choice(block_list)
+        to_append = t[0]*20 + t[1]
+        final_list.append(to_append)
+    print(final_list)
+    return final_list
 
 def find_closest_square():
     dp_closest_squares = numpy.zeros(401)
@@ -53,9 +66,3 @@ def find_closest_square():
         else:
             dp_closest_squares[i] = tmp
     return dp_closest_squares
-
-dp_squares = find_closest_square()
-
-l = divide_grid(80, dp_squares)
-
-set_tower_locations()
