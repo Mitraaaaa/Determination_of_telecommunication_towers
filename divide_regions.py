@@ -27,7 +27,7 @@ def check_density_of_blocks(region: list, population_size: list):
         density += population_size[temp]
     return density
 
-def set_tower_locations(size_of_towers, population_size):
+def set_tower_locations(size_of_towers, population_size, iteration):
     dp_squares = find_closest_square()
     region_list = divide_grid(size_of_towers+1, dp_squares)
     density_list = []
@@ -41,17 +41,20 @@ def set_tower_locations(size_of_towers, population_size):
         probs.append(i/sum(density_list))
         values.append(index)
         index += 1
+
+    final_result = []
     
-    regions_tower = numpy.random.choice(values,size=size_of_towers,p = probs)
-    final_list = []
-    
-    for x in regions_tower:
-        block_list = region_list[x - 1]
-        t = random.choice(block_list)
-        to_append = t[0]*20 + t[1]
-        final_list.append(to_append)
-    print(final_list)
-    return final_list
+    for iter in range(iteration):
+        regions_tower = numpy.random.choice(values,size=size_of_towers,p = probs)
+        final_list = []
+        for x in regions_tower:
+            block_list = region_list[x - 1]
+            t = random.choice(block_list)
+            to_append = t[0]*20 + t[1]
+            final_list.append(to_append)
+        final_result.append(final_list)
+    return final_result
+
 
 def find_closest_square():
     dp_closest_squares = numpy.zeros(401)
