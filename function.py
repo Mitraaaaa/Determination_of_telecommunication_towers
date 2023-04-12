@@ -119,7 +119,7 @@ def calculate_satisfaction(assign_dict: list, each_tower_population: list):
             bound_of_each_user_in_block = block_bound / block_population
             # calculate the score
             score = 0
-            for j in len(user_satisfaction_levels):
+            for j in reversed(len(user_satisfaction_levels)):
                 if bound_of_each_user_in_block >= user_satisfaction_levels[j]:
                     score = user_satisfaction_scores[j]
                     break
