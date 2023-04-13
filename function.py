@@ -37,6 +37,7 @@ def unique_random_list(length, start, end):
     while len(nums) < length:
         nums.add(random.randint(start, end-1))
     return list(nums)
+
 def euclidean_distance(point1, point2):
     return math.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)
 
@@ -56,25 +57,27 @@ def calulacte_conv_block_tower():
     return dp,dp2
 
 def assign_blocks(distance, tower_coordination, blocks_population:list):
+    # blocks_population => population given from input
     # assigning eah neighbour to a tower based on weather that tower is consider closets to that neighbour
     each_tower_population = list([0 for x in range(400)]) #the indices are tower_ids and value is population assigned to that tower
     assign_dict = dict()
     for each in tower_coordination:
-        id_coordinate = each[0]*20 + each[1]
-        assign_dict[id_coordinate] = list()
-        each_tower_population[id_coordinate] = 0
+        # id_coordinate = each[0]*20 + each[1]
+        assign_dict[each] = list()
+        each_tower_population[each] = 0
 
     for i in range(400): # neighbours location
         min_d = 1e10
         min_id = None
         for each in tower_coordination:
-            id_coordinate = each[0]*20 + each[1]
-            if distance[i][id_coordinate] < min_d:
-                min_d = distance[i][id_coordinate]
-                min_id = id_coordinate
+            # id_coordinate = each[0]*20 + each[1]
+            if distance[i][each] < min_d:
+                min_d = distance[i][each]
+                min_id = each
+        # print(min_id, tower_coordination)
         assign_dict[min_id].append(i)
         each_tower_population[min_id] += blocks_population[i]
-
+    # assign_dict => each tower has a list of neighbours
     return assign_dict, each_tower_population
 
 dp = calulacte_conv_block_tower()
@@ -86,17 +89,19 @@ def estimate_max_bound_for_eachTower(tower_id :int, assign_blocks :dict, each_to
 
     # init the farthest to first neighbour
     Farthest_neighbour = assigned_neighbour[0]
+
     max_dis = distance[tower_id][assigned_neighbour[0]]
     # calculate the Farthest neighbour to the chosen tower
     for x in assigned_neighbour:
         if distance[x][tower_id] > max_dis:
             max_dis = distance[x][tower_id]
             Farthest_neighbour = x
-
+    # print(Farthest_neighbour)
+    # print(each_tower_population[tower_id], conv(calculate_coordinates(Farthest_neighbour), calculate_coordinates(tower_id)))
     max_bound_towerId = ((3* each_tower_population[tower_id])//conv(calculate_coordinates(Farthest_neighbour), calculate_coordinates(tower_id)))
     return max_bound_towerId
 
-def calculate_satisfaction(assign_dict: list, each_tower_population: list):
+def calculate_satisfaction(assign_dict: dict, each_tower_population: list, bandwidth_towers: dict):
     # inputs
         # 1- assign_dict -> see what blocks are assigned to what tower
         # 2- each_tower_population -> needed for the calculation of the bound of each block
@@ -115,9 +120,10 @@ def calculate_satisfaction(assign_dict: list, each_tower_population: list):
     total_increasd_bound = 0
     total_score = 0
 
-    for i in len(assign_dict):
+    for i in assign_dict:
         # get boundwidth of tower
-        bound_of_tower = estimate_max_bound_for_eachTower(i)
+        #bound_of_tower = estimate_max_bound_for_eachTower(i)
+        bound_of_tower = bandwidth_towers[i]
         # add cost for increased bound
         total_increasd_bound += bound_of_tower * cost_to_increase_bandwidth
         # calculate score for each block assigned to tower[i]
@@ -130,7 +136,7 @@ def calculate_satisfaction(assign_dict: list, each_tower_population: list):
             bound_of_each_user_in_block = block_bound / block_population
             # calculate the score
             score = 0
-            for j in reversed(len(user_satisfaction_levels)):
+            for j in reversed(range(len(user_satisfaction_levels))):
                 if bound_of_each_user_in_block >= user_satisfaction_levels[j]:
                     score = user_satisfaction_scores[j]
                     break

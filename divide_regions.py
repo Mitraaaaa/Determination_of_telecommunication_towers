@@ -29,7 +29,7 @@ def check_density_of_blocks(region: list, population_size: list):
 
 def set_tower_locations(size_of_towers, population_size, iteration):
     dp_squares = find_closest_square()
-    region_list = divide_grid(size_of_towers+1, dp_squares)
+    region_list = divide_grid(size_of_towers, dp_squares)
     density_list = []
     for i in region_list:
         density_list.append(check_density_of_blocks(i,population_size))
@@ -54,7 +54,6 @@ def set_tower_locations(size_of_towers, population_size, iteration):
             final_list.append(to_append)
         final_result.append(final_list)
     return final_result
-
 
 def find_closest_square():
     dp_closest_squares = numpy.zeros(401)
