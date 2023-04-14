@@ -129,5 +129,5 @@ for i in range(49,50):
                 child4 = mutations.creep_mutation(child4)
         
 
-plt.plot(x_axis,y_axis)
+plt.plot(x_axis,y_axis,linestyle = 'solid')
 plt.show()
