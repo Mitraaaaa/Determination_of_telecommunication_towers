@@ -100,7 +100,7 @@ for i in range(3, 401):
         if eproch == number_of_approach - 1:
             final_chromosomes.append(region_towers[0])
             final_bandwidth.append(bandwidth[0])
-            final_fitness.append(sorted_fitness[0])
+            final_fitness.append(sorted_fitness[list(sorted_fitness.keys())[0]])
         
         for _ in range(number_of_chromosome):
             weighted_keys = find_weighted_keys(sorted_fitness)
