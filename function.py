@@ -4,6 +4,8 @@ import random
 import math
 import openfile
 
+blocks_population, problem_config = openfile.read_files()
+
 def conv(x_alley:list, y_d:list)->float:
     alley_loc = np.array([x_alley])
     d_loc = np.array([y_d])
@@ -56,7 +58,7 @@ def calulacte_conv_block_tower():
         dp2.append(each_dp_2)
     return dp,dp2
 
-def assign_blocks(distance, tower_coordination, blocks_population:list):
+def assign_blocks(distance, tower_coordination):
     # blocks_population => population given from input
     # assigning eah neighbour to a tower based on weather that tower is consider closets to that neighbour
     each_tower_population = list([0 for x in range(400)]) #the indices are tower_ids and value is population assigned to that tower
@@ -96,12 +98,31 @@ def estimate_max_bound_for_eachTower(tower_id :int, assign_blocks :dict, each_to
         if distance[x][tower_id] > max_dis:
             max_dis = distance[x][tower_id]
             Farthest_neighbour = x
-    # print(Farthest_neighbour)
-    # print(each_tower_population[tower_id], conv(calculate_coordinates(Farthest_neighbour), calculate_coordinates(tower_id)))
+        
     max_bound_towerId = ((3* each_tower_population[tower_id])//conv(calculate_coordinates(Farthest_neighbour), calculate_coordinates(tower_id)))
     return max_bound_towerId
 
+def esitimate_bound_for_Towerlist(chromosome:list,assign_blocks :dict, each_tower_population:dict , distance , total_bound):
+    # we use proportion to assign the max_bound for each toer based on totoal bound give
+    esitimated_max_bound = []
+    chosen_bound = []
+    sum_estimated_max_bound = 0
+    normalization = 1000
+    for gene in chromosome :
+        max_bound_each = math.ceil(estimate_max_bound_for_eachTower(gene, assign_blocks, each_tower_population , distance) / normalization)
+        esitimated_max_bound.append(max_bound_each)
+        sum_estimated_max_bound += max_bound_each
+
+    step = total_bound / sum_estimated_max_bound
+    for i in range(0, len(chromosome)) : 
+        esitimated_max_bound[i] = step * esitimated_max_bound[i]
+        tmp = random.randint(1,int(esitimated_max_bound[i]+2))
+        chosen_bound.append(tmp)
+    # chosen_bound is a list that returns a approximated bound for each gene in choromosome
+    return chosen_bound
+
 def calculate_satisfaction(assign_dict: dict, each_tower_population: list, bandwidth_towers: dict):
+
     # inputs
         # 1- assign_dict -> see what blocks are assigned to what tower
         # 2- each_tower_population -> needed for the calculation of the bound of each block
@@ -109,7 +130,7 @@ def calculate_satisfaction(assign_dict: dict, each_tower_population: list, bandw
         # 1- number of towers + their bound -> calculate cost of towers
         # 2- population of each block and the tower assigned to that block -> calculate score of each block
     
-    blocks_population, problem_config = openfile.read_files()
+    
 
     # getting costs and scores from config-file
     cost_to_build_tower = problem_config['tower_construction_cost']
@@ -145,4 +166,6 @@ def calculate_satisfaction(assign_dict: dict, each_tower_population: list, bandw
     # calculate the cost of building towers + their increased bandwidth
     total_cost_of_towers = total_increasd_bound + (len(assign_dict) * cost_to_build_tower)
             
-    return -abs(total_cost_of_towers) + total_score
+    # return -abs(total_cost_of_towers) + total_score
+    return total_score/abs(total_cost_of_towers)
+

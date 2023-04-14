@@ -2,163 +2,132 @@ import divide_regions
 import openfile
 import random
 import numpy as np
-from function import unique_random_list,estimate_max_bound_for_eachTower,assign_blocks,calulacte_conv_block_tower \
-                    ,calculate_satisfaction
-import crossovers 
+from function import unique_random_list,assign_blocks,calulacte_conv_block_tower \
+                    ,calculate_satisfaction, esitimate_bound_for_Towerlist
+import crossovers, mutations
+import matplotlib.pyplot as plt
 
-
-class Chromosome:
-    def __init__(self, towers: list, assign_dict: dict, fitness, each_tower_population: list):
-        self.towers = towers
-        self.assign_dict = assign_dict
-        self.fitness = fitness
-        self.each_tower_population = each_tower_population
-
-
-class Tower:
-    def __init__(self, bandwidth, id):
-        self.bandwidth = bandwidth
-        self.id = id
-        
-def make_classes(region_towers):
-    l = []
-    for cnt in range(len(region_towers)):
-        temp = []
-        for tower in region_towers[cnt]:
-            t = Tower(bandwidth = 0, id = tower)
-            temp.append(t)
-        l.append(temp)
-    return l
-
-def make_chromosome(list_of_towers: list):
-    l = []
-    for each_list in list_of_towers:
-        chromosome = Chromosome(towers = each_list, assign_dict = None, \
-                                fitness = 0, each_tower_population = 0)
-        l.append(chromosome)
-    return l
-
-
-def normalize_fitness(fitness):
-    cnt = len(fitness)
-    for i in fitness:
-        fitness[i] = cnt
-        cnt -= 1
-
-def find_weighted_keys(sorted_fitness: dict):
-    weighted_keys = []
-    for key, value in sorted_fitness.items():
-        weighted_keys.extend([key] * value)
-    return weighted_keys
-
-def make_bandwidth_towers(individual: Chromosome):
-    bandwidth_towers = {}
-    for tower in individual.towers:
-        bandwidth_towers[tower.id] = tower.bandwidth
-    return bandwidth_towers
-
-def make_fitness(individuals: list):
-    fitness = {}
-    for cnt in range(len(individuals)):
-        fitness[cnt] = individuals[cnt].fitness
-    return fitness
-
-def make_id_list(towers_list: list):
-    id = []
-    for tower in towers_list:
-        id.append(tower.id)
-    return id
-
-with_calculation = 5
+max_bound = 800000
+P_mut = 0.1
+P_cro = 0.9
+number_of_chromosome = 50
+# number of calculated chromosome
+with_calculation = 30
+# number of random chromosome 
 without_calculation = 50 - with_calculation
 
+# read files
 blocks_population,_ = openfile.read_files()
 conv,distance = calulacte_conv_block_tower()
 
-number_eproch = 5
+number_of_approach = 200
 
-for i in range(3,4):
+cut_range = 5 # used in best_bound_for_chromosome
+
+def best_bound_for_chromosome(chromosome:list, assign_dict , each_tower_population , distance):
+    best_statisfaction = -100
+    best_chromosome_bound = []
+    step = max_bound//cut_range
+    for i in range(step, max_bound, step):
+        total_bound_for_this_chromosome = random.randint(i, i+step)
+        bound_chromosome = esitimate_bound_for_Towerlist(chromosome, assign_dict, \
+                                                                each_tower_population, distance, total_bound_for_this_chromosome)
+        bandwidth_towers = dict(zip(chromosome, bound_chromosome))
+        new_satisfaction = calculate_satisfaction(assign_dict,each_tower_population,bandwidth_towers)
+        if best_statisfaction < new_satisfaction :
+            best_statisfaction = new_satisfaction
+            best_chromosome_bound = bound_chromosome
+
+    return best_statisfaction,best_chromosome_bound
+        
+    
+def find_weighted_keys(sorted_fitness: dict):
+    weighted_keys = []
+    for key, value in sorted_fitness.items():
+        weighted_keys.extend([key] * int(value))
+    return weighted_keys
+
+for i in range(49,50):
     # region_towers -> list 30*i
     region_towers = divide_regions.set_tower_locations(i, blocks_population, with_calculation)
 
-    # for j in range(without_calculation):
-    #     region_towers.append(unique_random_list(i, 0, 400))
+    for j in range(without_calculation):
+        region_towers.append(unique_random_list(i, 0, 400))
 
-    individual = make_classes(region_towers)
-    individual = make_chromosome(individual)
+    fitness = {}
+    #bandwidth = {}
 
+    for k in range(0,len(region_towers)):
+        
+        assign_dict, each_tower_population = assign_blocks(distance,region_towers[k])
+        fitness[k], _ = best_bound_for_chromosome(region_towers[k],assign_dict,each_tower_population,distance)
+        sorted_fitness = dict(sorted(fitness.items(), key=lambda x: x[1], reverse=True))
     
-    # fitness = {}
+    x_axis = []
+    y_axis = []
+    for eproch in range(number_of_approach):
+        x_axis.append(eproch)
+        # sort fitnesses of chromosome list
+        
+        sorted_fitness = dict(sorted(sorted_fitness.items(), key=lambda x: x[1], reverse=True))
+        new_region_tower = []
+        new_sorted_fitness = {}
+        
+        #print(list(sorted_fitness.keys())[:50])
+        for each in list(sorted_fitness.keys())[:50]:
+            new_region_tower.append(region_towers[each])
+        region_towers.clear()
+        region_towers = new_region_tower.copy()
 
-    # for k in range(0,len(region_towers)):
+        l = [x for x in range(50)]
+        # new_sorted_fitness = list(sorted_fitness.values())[:50]
+        new_sorted_fitness = dict(zip(l, list(sorted_fitness.values())[:50]))
+        sorted_fitness.clear()
+        sorted_fitness = new_sorted_fitness.copy()
+        y_axis.append(list(sorted_fitness.values())[0])
         
-    #     assign_dict, each_tower_population = assign_blocks(distance,region_towers[k],blocks_population)
-    #     # print(assign_dict)
-    #     bandwidth_towers = {}
+        for _ in range(number_of_chromosome):
+            weighted_keys = find_weighted_keys(sorted_fitness)
+            # pick parents
+            parent1 = np.random.choice(weighted_keys)
+            parent2 = np.random.choice(weighted_keys)
+            while parent1 == parent2:
+                parent1 = np.random.choice(weighted_keys)
+                parent2 = np.random.choice(weighted_keys)
+
+            # get new childs with crossovers
+            child1, child2 = crossovers.uniform_crossover(region_towers[parent1], region_towers[parent2])
+            child3, child4 = crossovers.two_point_crossover(region_towers[parent1], region_towers[parent2])
+
+            # assign_blocks for new childs
+            assign_blocks_child1, tower_population_child1 = assign_blocks(distance, child1)
+            assign_blocks_child2, tower_population_child2 = assign_blocks(distance, child2)
+            assign_blocks_child3, tower_population_child3 = assign_blocks(distance, child3)
+            assign_blocks_child4, tower_population_child4 = assign_blocks(distance, child4)
+
+            # calculate satisfaction for new childs
+            h = len(region_towers)
         
-    #     for towerId in region_towers[k]:
-    #         max_bound_towerId = estimate_max_bound_for_eachTower(towerId,assign_dict,each_tower_population,distance)
-    #         bound_towerId = random.randint(1,max_bound_towerId)
-    #         # print(bound_towerId)
-    #         bandwidth_towers[towerId] = bound_towerId    
-    #         # print(max_bound_towerId)
+            sorted_fitness[h],_ = best_bound_for_chromosome(child1, assign_blocks_child1, tower_population_child1, distance)
+            sorted_fitness[h+1],_ = best_bound_for_chromosome(child2, assign_blocks_child2, tower_population_child2, distance)
+            sorted_fitness[h+2],_ = best_bound_for_chromosome(child3, assign_blocks_child3, tower_population_child3, distance)
+            sorted_fitness[h+3],_ = best_bound_for_chromosome(child4, assign_blocks_child4, tower_population_child4, distance)
+
+            # update our chromosome list with new childs
+            region_towers.append(child1)
+            region_towers.append(child2)
+            region_towers.append(child3)
+            region_towers.append(child4)
             
-    #     fitness[k] = calculate_satisfaction(assign_dict, each_tower_population, bandwidth_towers)        
-    #     sorted_fitness = dict(sorted(fitness.items(), key=lambda x: x[1], reverse=True))
+            # update k after apending the 4 childs to region_towers
+            h += 4
 
-    #------------------------------------------------------------------------------------------------------------------#
-    for k in range(len(individual)):
-        assign_dict, each_tower_population = assign_blocks(distance, make_id_list(individual[k].towers), blocks_population)
-        individual[k].assign_dict = assign_dict
-        individual[k].each_tower_population = each_tower_population
-
-        for each_tower in individual[k].towers:
-            max_bound_each_tower = estimate_max_bound_for_eachTower(each_tower.id, individual[k].assign_dict \
-                                                                , individual[k].each_tower_population, distance)
-            bound_tower = random.randint(1, max_bound_each_tower)
-            each_tower.bandwidth = bound_tower
-        bandwidth_towers = make_bandwidth_towers(individual[k])
-        fitness = calculate_satisfaction(individual[k].assign_dict, individual[k].each_tower_population, bandwidth_towers)
-        individual[k].fitness = fitness
-    fitness = make_fitness(individual)
-    sorted_fitness = dict(sorted(fitness.items(), key=lambda x: x[1], reverse=True))
-    normalize_fitness(sorted_fitness)
-
-    for eproch in range(number_eproch):
-        weighted_keys = find_weighted_keys(sorted_fitness)
-
-        parent1 = np.random.choice(weighted_keys)
-        parent2 = np.random.choice(weighted_keys)
-        if parent1 == parent2: continue
-
-        child = crossovers.uniform_crossover(individual[parent1].towers, individual[parent2].towers)
-
-        # make a new chromosome
-        new_assign_dict, new_each_tower_population = assign_blocks(distance, make_id_list(child), blocks_population)
-        chrom = Chromosome(towers = child, assign_dict= new_assign_dict, fitness= None, \
-                            each_tower_population = new_each_tower_population)
+            if random.random() < P_mut:
+                child1 = mutations.creep_mutation(child1)
+                child2 = mutations.creep_mutation(child2)
+                child3 = mutations.creep_mutation(child3)
+                child4 = mutations.creep_mutation(child4)
         
-        individual.append(chrom)
 
-        print(child)
-    #------------------------------------------------------------------------------------------------------------------#
-    
-    # # normalize the fittness
-    # normalize_fitness(sorted_fitness)
-
-    # # weighted_keys = []
-    # # for key, value in sorted_fitness.items():
-    # #     weighted_keys.extend([key] * value)
-    
-    # for eproch in range(number_eproch):
-    #     weighted_keys = find_weighted_keys(sorted_fitness)
-
-    #     parent1 = np.random.choice(weighted_keys)
-    #     parent2 = np.random.choice(weighted_keys)
-    #     if parent1 == parent2: continue
-
-    #     child = crossovers.uniform_crossover(region_towers[parent1], region_towers[parent2])
-
-    #     print(child)
-    
-
+plt.plot(x_axis,y_axis)
+plt.show()
