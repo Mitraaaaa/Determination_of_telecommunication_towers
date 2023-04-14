@@ -55,13 +55,14 @@ for i in range(49,50):
         region_towers.append(unique_random_list(i, 0, 400))
 
     fitness = {}
-    #bandwidth = {}
+    bandwidth = []
 
     for k in range(0,len(region_towers)):
         
         assign_dict, each_tower_population = assign_blocks(distance,region_towers[k])
-        fitness[k], _ = best_bound_for_chromosome(region_towers[k],assign_dict,each_tower_population,distance)
+        fitness[k], bandwidth_k = best_bound_for_chromosome(region_towers[k],assign_dict,each_tower_population,distance)
         sorted_fitness = dict(sorted(fitness.items(), key=lambda x: x[1], reverse=True))
+        bandwidth.append(bandwidth_k)
     
     x_axis = []
     y_axis = []
@@ -72,12 +73,18 @@ for i in range(49,50):
         sorted_fitness = dict(sorted(sorted_fitness.items(), key=lambda x: x[1], reverse=True))
         new_region_tower = []
         new_sorted_fitness = {}
+        new_bandwidth = []
         
         #print(list(sorted_fitness.keys())[:50])
         for each in list(sorted_fitness.keys())[:50]:
             new_region_tower.append(region_towers[each])
         region_towers.clear()
         region_towers = new_region_tower.copy()
+
+        for each in list(sorted_fitness.keys())[:50]:
+            new_bandwidth.append(bandwidth[each])
+        bandwidth.clear()
+        bandwidth = new_bandwidth.copy()
 
         l = [x for x in range(50)]
         # new_sorted_fitness = list(sorted_fitness.values())[:50]
@@ -108,16 +115,22 @@ for i in range(49,50):
             # calculate satisfaction for new childs
             h = len(region_towers)
         
-            sorted_fitness[h],_ = best_bound_for_chromosome(child1, assign_blocks_child1, tower_population_child1, distance)
-            sorted_fitness[h+1],_ = best_bound_for_chromosome(child2, assign_blocks_child2, tower_population_child2, distance)
-            sorted_fitness[h+2],_ = best_bound_for_chromosome(child3, assign_blocks_child3, tower_population_child3, distance)
-            sorted_fitness[h+3],_ = best_bound_for_chromosome(child4, assign_blocks_child4, tower_population_child4, distance)
+            sorted_fitness[h],bandwdith_child1 = best_bound_for_chromosome(child1, assign_blocks_child1, tower_population_child1, distance)
+            sorted_fitness[h+1],bandwdith_child2 = best_bound_for_chromosome(child2, assign_blocks_child2, tower_population_child2, distance)
+            sorted_fitness[h+2],bandwdith_child3 = best_bound_for_chromosome(child3, assign_blocks_child3, tower_population_child3, distance)
+            sorted_fitness[h+3],bandwdith_child4 = best_bound_for_chromosome(child4, assign_blocks_child4, tower_population_child4, distance)
 
             # update our chromosome list with new childs
             region_towers.append(child1)
             region_towers.append(child2)
             region_towers.append(child3)
             region_towers.append(child4)
+
+            # update bandwidth
+            bandwidth.append(bandwdith_child1)
+            bandwidth.append(bandwdith_child2)
+            bandwidth.append(bandwdith_child3)
+            bandwidth.append(bandwdith_child4)
             
             # update k after apending the 4 childs to region_towers
             h += 4
