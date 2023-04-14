@@ -47,7 +47,11 @@ def find_weighted_keys(sorted_fitness: dict):
         weighted_keys.extend([key] * int(value))
     return weighted_keys
 
-for i in range(49,50):
+final_chromosomes = []
+final_bandwidth = []
+final_fitness = []
+
+for i in range(3, 401):
     # region_towers -> list 30*i
     region_towers = divide_regions.set_tower_locations(i, blocks_population, with_calculation)
 
@@ -92,6 +96,11 @@ for i in range(49,50):
         sorted_fitness.clear()
         sorted_fitness = new_sorted_fitness.copy()
         y_axis.append(list(sorted_fitness.values())[0])
+        
+        if eproch == number_of_approach - 1:
+            final_chromosomes.append(region_towers)
+            final_bandwidth.append(bandwidth)
+            final_fitness.append(sorted_fitness)
         
         for _ in range(number_of_chromosome):
             weighted_keys = find_weighted_keys(sorted_fitness)
@@ -140,7 +149,7 @@ for i in range(49,50):
                 child2 = mutations.creep_mutation(child2)
                 child3 = mutations.creep_mutation(child3)
                 child4 = mutations.creep_mutation(child4)
-        
+    
 
 plt.plot(x_axis,y_axis,linestyle = 'solid')
 plt.show()
